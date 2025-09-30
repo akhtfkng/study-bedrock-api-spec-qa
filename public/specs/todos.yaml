@@ -1,0 +1,270 @@
+openapi: 3.0.3
+info:
+  title: ToDo API
+  version: 1.0.0
+paths:
+  /todos:
+    get:
+      summary: List todos
+      description: Returns a paginated list of todos filtered by optional criteria.
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of todos to return.
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          description: Cursor for pagination.
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter todos by status.
+          required: false
+          schema:
+            type: string
+            enum:
+              - todo
+              - in_progress
+              - done
+        - name: dueBefore
+          in: query
+          description: Return todos due before the specified date.
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: dueAfter
+          in: query
+          description: Return todos due after the specified date.
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: A collection of todos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Todo'
+    post:
+      summary: Create a todo
+      description: Creates a new todo item.
+      parameters:
+        - name: X-Request-ID
+          in: header
+          description: Correlates client requests.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Todo creation payload.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTodoRequest'
+      responses:
+        '201':
+          description: Todo created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+        '400':
+          description: Invalid payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /todos/{id}:
+    get:
+      summary: Retrieve a todo by id
+      description: Returns the todo that matches the supplied identifier.
+      parameters:
+        - name: id
+          in: path
+          description: Todo identifier.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Todo found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+        '404':
+          description: Todo not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      summary: Update a todo
+      description: Applies partial updates to a todo. At least one field must be provided.
+      parameters:
+        - name: X-Request-ID
+          in: header
+          description: Correlates client requests.
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Todo identifier.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Fields to update on the todo.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTodoRequest'
+      responses:
+        '200':
+          description: Todo updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+        '400':
+          description: Invalid payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Todo not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a todo
+      description: Deletes the todo that matches the supplied identifier.
+      parameters:
+        - name: X-Request-ID
+          in: header
+          description: Correlates client requests.
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: Todo identifier.
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Todo deleted successfully.
+        '404':
+          description: Todo not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Todo:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+            - todo
+            - in_progress
+            - done
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 5
+        dueDate:
+          type: string
+          format: date
+        postalCode:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - status
+        - createdAt
+        - updatedAt
+    CreateTodoRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+            - todo
+            - in_progress
+            - done
+          default: todo
+        priority:
+          type: integer
+        dueDate:
+          type: string
+          format: date
+        postalCode:
+          type: string
+      required:
+        - title
+    UpdateTodoRequest:
+      type: object
+      description: At least one field must be provided.
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+            - todo
+            - in_progress
+            - done
+        priority:
+          type: integer
+        dueDate:
+          type: string
+          format: date
+        postalCode:
+          type: string
+      minProperties: 1
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required:
+        - code
+        - message
